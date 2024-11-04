@@ -1,0 +1,16 @@
+{
+  "name": "kct_dashboard_backend",
+  "version": "1.0.0",
+  "description": "An express.js backend for the kct dashboard",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1",
+    "pg": "^8.13.1"
+  }
+}
