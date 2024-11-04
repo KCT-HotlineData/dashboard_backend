@@ -1,6 +1,8 @@
 import express from "express";
 import pg from 'pg'
-import { DB_CLIENT_CONFIG } from "./db_secrets.js"
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const { Client } = pg;
 
@@ -13,7 +15,13 @@ const port = 3000
 const CURRENT_311_TABLE_NAME = "current_311";
 const DEPRECATED_311_TABLE_NAME = "deprecated_311"
 
-const client = new Client(DB_CLIENT_CONFIG)
+const client = new Client({
+  user: process.env.user,
+  password: process.env.password,
+  host: process.env.host,
+  port: process.env.port,
+  database: process.env.database,
+})
 
 await client.connect()
 
