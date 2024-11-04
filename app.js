@@ -6,8 +6,8 @@ dotenv.config();
 
 const { Client } = pg;
 
-// establish git repository
-// figure out how to get on render
+// update table schema for deprecated to use numeric longitude and latitude (see current 311 for correct type)
+// after that, uncomment deprecated query below, commit and deploy
 
 const app = express()
 const port = 3000
@@ -69,26 +69,26 @@ app.get('/fetch-311', async (req, res) => {
     `
   );
 
-  const { rows: old311Rows } = await client.query(
-    `
-    WITH calculated_distances AS (
-        SELECT *,
-        (6371 * 2 * ASIN(SQRT(
-            POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
-            COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
-            POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
-        ))) AS distance
-        FROM ${DEPRECATED_311_TABLE_NAME}
-        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-    )
-    SELECT *
-    FROM calculated_distances
-    WHERE distance <= ${distance_threshold_km}
-    ORDER BY distance ASC;
-    `
-  );
+  // const { rows: old311Rows } = await client.query(
+  //   `
+  //   WITH calculated_distances AS (
+  //       SELECT *,
+  //       (6371 * 2 * ASIN(SQRT(
+  //           POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
+  //           COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
+  //           POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
+  //       ))) AS distance
+  //       FROM ${DEPRECATED_311_TABLE_NAME}
+  //       WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+  //   )
+  //   SELECT *
+  //   FROM calculated_distances
+  //   WHERE distance <= ${distance_threshold_km}
+  //   ORDER BY distance ASC;
+  //   `
+  // );
   
-  res.send([...new311Rows, ...old311Rows])
+  res.send([...new311Rows])
 });
 
 
@@ -127,13 +127,11 @@ app.get('/fetch-nearby-311', async (req, res) => {
   res.send(rows)
 });
 
-app.get("/parcel/search", (req, res) => {
+app.get("/parcel/search", (_req, res) => {
   res.send([])
 })
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+app.listen(port)
 
 app.use((_req, res, _next) => {
   res.status(404).send("Sorry can't find that!")
