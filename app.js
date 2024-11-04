@@ -6,9 +6,6 @@ dotenv.config();
 
 const { Client } = pg;
 
-// update table schema for deprecated to use numeric longitude and latitude (see current 311 for correct type)
-// after that, uncomment deprecated query below, commit and deploy
-
 const app = express()
 const port = 3000
 
@@ -24,6 +21,14 @@ const client = new Client({
 })
 
 await client.connect()
+
+// TO DOS:
+// limit queries to only the 311 data we care about
+// combine endpoints and accept a km_threshold parameter, defaults to 0.02
+// standardize the disparate 311 data types into a single, standardized response
+// order from most to least recent
+// document how the current stack works
+// get supabase account and backend repo under KCT control
 
 app.use(function (_req, res, next) {
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -69,26 +74,26 @@ app.get('/fetch-311', async (req, res) => {
     `
   );
 
-  // const { rows: old311Rows } = await client.query(
-  //   `
-  //   WITH calculated_distances AS (
-  //       SELECT *,
-  //       (6371 * 2 * ASIN(SQRT(
-  //           POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
-  //           COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
-  //           POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
-  //       ))) AS distance
-  //       FROM ${DEPRECATED_311_TABLE_NAME}
-  //       WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-  //   )
-  //   SELECT *
-  //   FROM calculated_distances
-  //   WHERE distance <= ${distance_threshold_km}
-  //   ORDER BY distance ASC;
-  //   `
-  // );
+  const { rows: old311Rows } = await client.query(
+    `
+    WITH calculated_distances AS (
+        SELECT *,
+        (6371 * 2 * ASIN(SQRT(
+            POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
+            COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
+            POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
+        ))) AS distance
+        FROM ${DEPRECATED_311_TABLE_NAME}
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+    )
+    SELECT *
+    FROM calculated_distances
+    WHERE distance <= ${distance_threshold_km}
+    ORDER BY distance ASC;
+    `
+  );
   
-  res.send([...new311Rows])
+  res.send([...new311Rows, ...old311Rows])
 });
 
 
@@ -105,7 +110,7 @@ app.get('/fetch-nearby-311', async (req, res) => {
     return;
   }
 
-  const { rows } = await client.query(
+  const { rows: new311Rows } = await client.query(
     `
     WITH calculated_distances AS (
         SELECT *,
@@ -123,8 +128,27 @@ app.get('/fetch-nearby-311', async (req, res) => {
     ORDER BY distance ASC;
     `
   );
+
+  const { rows: old311Rows } = await client.query(
+    `
+    WITH calculated_distances AS (
+        SELECT *,
+        (6371 * 2 * ASIN(SQRT(
+            POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
+            COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
+            POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
+        ))) AS distance
+        FROM ${DEPRECATED_311_TABLE_NAME}
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+    )
+    SELECT *
+    FROM calculated_distances
+    WHERE distance <= ${distance_threshold_km}
+    ORDER BY distance ASC;
+    `
+  );
   
-  res.send(rows)
+  res.send([...new311Rows, ...old311Rows])
 });
 
 app.get("/parcel/search", (_req, res) => {
