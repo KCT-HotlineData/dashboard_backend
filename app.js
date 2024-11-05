@@ -10,7 +10,8 @@ const app = express()
 const port = 3000
 
 const CURRENT_311_TABLE_NAME = "current_311";
-const DEPRECATED_311_TABLE_NAME = "deprecated_311"
+const DEPRECATED_311_TABLE_NAME = "deprecated_311";
+const PARCEL_TABLE_NAME = "parcel";
 
 const client = new Client({
   user: process.env.user,
@@ -25,7 +26,7 @@ await client.connect()
 // TO DOS:
 // limit queries to only the 311 data we care about
 // combine endpoints and accept a km_threshold parameter, defaults to 0.02
-// standardize the disparate 311 data types into a single, standardized response
+// standardize the disparate 311 data types into a single, standardized response (limit props for faster loading times)
 // order from most to least recent
 // document how the current stack works
 // get supabase account and backend repo under KCT control
@@ -96,7 +97,6 @@ app.get('/fetch-311', async (req, res) => {
   res.send([...new311Rows, ...old311Rows])
 });
 
-
 app.get('/fetch-nearby-311', async (req, res) => {
   const query = { req };
   const { latitude, longitude } = (query?.req?.query || query);
@@ -151,11 +151,37 @@ app.get('/fetch-nearby-311', async (req, res) => {
   res.send([...new311Rows, ...old311Rows])
 });
 
-app.get("/parcel/search", (_req, res) => {
-  res.send([])
-})
+app.get('/search-parcel', async (req, res) => {
+  const query = { req };
+  const { latitude, longitude } = (query?.req?.query || query);
 
-app.listen(port)
+  if (!latitude || !longitude ) {
+    throw new Error("Latitude or longitude undefined")
+  }
+
+  const { rows } = await client.query(
+    `
+    WITH calculated_distances AS (
+        SELECT *,
+        (6371 * 2 * ASIN(SQRT(
+            POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
+            COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
+            POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
+        ))) AS distance
+        FROM ${PARCEL_TABLE_NAME}
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+    )
+    SELECT *
+    FROM calculated_distances
+    ORDER BY distance ASC
+    LIMIT 1;
+    `
+  );
+
+  res.send(rows[0])
+});
+
+app.listen(port, () => console.log(`listening on port: ${port}`))
 
 app.use((_req, res, _next) => {
   res.status(404).send("Sorry can't find that!")
