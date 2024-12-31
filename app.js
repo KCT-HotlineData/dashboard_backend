@@ -13,13 +13,7 @@ const CURRENT_311_TABLE_NAME = "current_311";
 const DEPRECATED_311_TABLE_NAME = "deprecated_311";
 const PARCEL_TABLE_NAME = "parcel";
 
-const client = new Client({
-  user: process.env.user,
-  password: process.env.password,
-  host: process.env.host,
-  port: process.env.port,
-  database: process.env.database,
-})
+const client = new Client(process.env.connectionString)
 
 await client.connect()
 
@@ -29,7 +23,6 @@ await client.connect()
 // standardize the disparate 311 data types into a single, standardized response (limit props for faster loading times)
 // order from most to least recent
 // document how the current stack works
-// get supabase account and backend repo under KCT control
 
 app.use(function (_req, res, next) {
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
