@@ -23,6 +23,7 @@ await client.connect()
 // standardize the disparate 311 data types into a single, standardized response (limit props for faster loading times)
 // order from most to least recent
 // document how the current stack works
+// figure out how to use internal url credentials scheme on render env variables for faster queries
 
 app.use(function (_req, res, next) {
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
