@@ -26,7 +26,7 @@ Run the following commands in your terminal, in whatever directory you'd like th
 
 `$ cd kct_dashboard/frontend`
 
-Create a `.env` file with the following properties:
+At the top level directory, create a `.env` file with the following properties:
 
 - `connectionString`
 
@@ -37,6 +37,8 @@ Make sure you [have Node installed](https://docs.npmjs.com/downloading-and-insta
 `$ node app.js`
 
 Then your terminal should log out "listening on port: 3000"!
+
+To test out your local changes, you can run the frontend locally as well (see below), and then set the frontend's backend endpoint to `http://localhost:3000`. This will cause the frontend to look at your local server for the backend rather than the "real" one hosted by Render.
 
 ## Frontend
 
