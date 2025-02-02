@@ -158,11 +158,13 @@ app.get("/fetch-nearby-311", async (req, res) => {
 
 app.get("/search-parcel", async (req, res) => {
   const query = { req };
-  const { latitude, longitude } = query?.req?.query || query;
+  const { latitude, longitude, houseNumber } = query?.req?.query || query;
 
   if (!latitude || !longitude) {
     throw new Error("Latitude or longitude undefined");
   }
+
+  if (!houseNumber) throw new Error("House number undefined");
 
   const { rows } = await client.query(
     `
@@ -174,7 +176,10 @@ app.get("/search-parcel", async (req, res) => {
             POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
         ))) AS distance
         FROM ${PARCEL_TABLE_NAME}
-        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        WHERE latitude IS NOT NULL
+          AND longitude IS NOT NULL
+          AND address IS NOT NULL
+          AND address LIKE ${houseNumber} || '%'
     )
     SELECT *
     FROM calculated_distances
