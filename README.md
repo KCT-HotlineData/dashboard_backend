@@ -32,7 +32,9 @@ At the top level directory, create a `.env` file with the following properties:
 
 and get their appropriate values from a maintainer. See `.env.example`.
 
-Make sure you [have Node installed](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) and run the following command in your terminal:
+Make sure you [have Node installed](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) and run the following commands in your terminal:
+
+`$ npm install`
 
 `$ node app.js`
 
