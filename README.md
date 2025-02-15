@@ -22,9 +22,9 @@ Make sure you have [git](https://git-scm.com/book/en/v2/Getting-Started-Installi
 
 Run the following commands in your terminal, in whatever directory you'd like this project to be on your machine:
 
-`$ git clone https://github.com/KCT-HotlineData/kct_dashboard.git`
+`$ git clone https://github.com/KCT-HotlineData/dashboard_backend.git`
 
-`$ cd kct_dashboard/frontend`
+`$ cd dashboard_backend`
 
 At the top level directory, create a `.env` file with the following properties:
 
