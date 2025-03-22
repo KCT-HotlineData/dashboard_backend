@@ -44,7 +44,7 @@ To test out your local changes, you can run the frontend locally as well (see be
 
 ## Frontend
 
-[Here](https://github.com/KCT-HotlineData/kct_dashboard) is the backend repository. See its README for details and how to contribute.
+[Here](https://github.com/KCT-HotlineData/kct_dashboard) is the frontend repository. See its README for details and how to contribute.
 
 # Deployments
 
