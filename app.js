@@ -42,7 +42,7 @@ app.get("/", (_req, res) => {
 app.get("/fetch-311-for-address", async (req, res) => {
   const query = { req };
   const { latitude, longitude, houseNumber } = query?.req?.query || query;
-  
+
   // we search for 311 reports on two datasets, with two restrictive criteria:
   // 1 - only get reports within 0.02 KM of the longitude and latitude passed
   // 2 - only get reports that have a defined address that starts with the house number of the address we are querying for
@@ -59,21 +59,21 @@ app.get("/fetch-311-for-address", async (req, res) => {
     WITH calculated_distances AS (
         SELECT *,
             (6371 * 2 * ASIN(SQRT(
-                POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
-                COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
-                POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
+                POWER(SIN(RADIANS(latitude - $1) / 2), 2) +
+                COS(RADIANS($1)) * COS(RADIANS(latitude)) *
+                POWER(SIN(RADIANS(longitude - $2) / 2), 2)
             ))) AS distance
         FROM ${CURRENT_311_TABLE_NAME}
-        WHERE latitude IS NOT NULL 
+        WHERE latitude IS NOT NULL
           AND longitude IS NOT NULL
           AND incident_address IS NOT NULL
-          AND incident_address LIKE ${houseNumber} || '%'
+          AND incident_address LIKE $4 || '%'
     )
     SELECT *
     FROM calculated_distances
-    WHERE distance <= ${distance_threshold_km}
+    WHERE distance <= $3
     ORDER BY open_date_time ASC;
-    `
+    `, [latitude, longitude, distance_threshold_km, houseNumber]
   );
 
   const { rows: old311Rows } = await client.query(
@@ -81,21 +81,21 @@ app.get("/fetch-311-for-address", async (req, res) => {
     WITH calculated_distances AS (
         SELECT *,
             (6371 * 2 * ASIN(SQRT(
-                POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
-                COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
-                POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
+                POWER(SIN(RADIANS(latitude - $1) / 2), 2) +
+                COS(RADIANS($1)) * COS(RADIANS(latitude)) *
+                POWER(SIN(RADIANS(longitude - $2) / 2), 2)
             ))) AS distance
         FROM ${DEPRECATED_311_TABLE_NAME}
-        WHERE latitude IS NOT NULL 
+        WHERE latitude IS NOT NULL
           AND longitude IS NOT NULL
           AND street_address IS NOT NULL
-          AND street_address LIKE ${houseNumber} || '%'
+          AND street_address LIKE $4 || '%'
     )
     SELECT *
     FROM calculated_distances
-    WHERE distance <= ${distance_threshold_km}
+    WHERE distance <= $3
     ORDER BY creation_date ASC;
-    `
+    `, [latitude, longitude, distance_threshold_km, houseNumber]
   );
 
   res.send([...new311Rows, ...old311Rows]);
@@ -120,18 +120,18 @@ app.get("/fetch-nearby-311", async (req, res) => {
     WITH calculated_distances AS (
         SELECT *,
         (6371 * 2 * ASIN(SQRT(
-            POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
-            COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
-            POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
+            POWER(SIN(RADIANS(latitude - $1) / 2), 2) +
+            COS(RADIANS($1)) * COS(RADIANS(latitude)) *
+            POWER(SIN(RADIANS(longitude - $2) / 2), 2)
         ))) AS distance
         FROM ${CURRENT_311_TABLE_NAME}
         WHERE latitude IS NOT NULL AND longitude IS NOT NULL
     )
     SELECT *
     FROM calculated_distances
-    WHERE distance <= ${distance_threshold_km}
+    WHERE distance <= $3
     ORDER BY distance ASC;
-    `
+    `, [latitude, longitude, distance_threshold_km]
   );
 
   const { rows: old311Rows } = await client.query(
@@ -139,18 +139,18 @@ app.get("/fetch-nearby-311", async (req, res) => {
     WITH calculated_distances AS (
         SELECT *,
         (6371 * 2 * ASIN(SQRT(
-            POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
-            COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
-            POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
+            POWER(SIN(RADIANS(latitude - $1) / 2), 2) +
+            COS(RADIANS($1)) * COS(RADIANS(latitude)) *
+            POWER(SIN(RADIANS(longitude - $2) / 2), 2)
         ))) AS distance
         FROM ${DEPRECATED_311_TABLE_NAME}
         WHERE latitude IS NOT NULL AND longitude IS NOT NULL
     )
     SELECT *
     FROM calculated_distances
-    WHERE distance <= ${distance_threshold_km}
+    WHERE distance <= $3
     ORDER BY distance ASC;
-    `
+    `, [latitude, longitude, distance_threshold_km]
   );
 
   res.send([...new311Rows, ...old311Rows]);
@@ -171,21 +171,21 @@ app.get("/search-parcel", async (req, res) => {
     WITH calculated_distances AS (
         SELECT *,
         (6371 * 2 * ASIN(SQRT(
-            POWER(SIN(RADIANS(latitude - ${latitude}) / 2), 2) +
-            COS(RADIANS(${latitude})) * COS(RADIANS(latitude)) *
-            POWER(SIN(RADIANS(longitude - ${longitude}) / 2), 2)
+            POWER(SIN(RADIANS(latitude - $1) / 2), 2) +
+            COS(RADIANS($1)) * COS(RADIANS(latitude)) *
+            POWER(SIN(RADIANS(longitude - $2) / 2), 2)
         ))) AS distance
         FROM ${PARCEL_TABLE_NAME}
         WHERE latitude IS NOT NULL
           AND longitude IS NOT NULL
           AND address IS NOT NULL
-          AND address LIKE ${houseNumber} || '%'
+          AND address LIKE $3 || '%'
     )
     SELECT *
     FROM calculated_distances
     ORDER BY distance ASC
     LIMIT 1;
-    `
+    `, [latitude, longitude, houseNumber]
   );
 
   res.send(rows[0]);
