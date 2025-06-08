@@ -10,7 +10,6 @@ const app = express();
 const port = 3000;
 
 const CURRENT_311_TABLE_NAME = "current_311";
-const DEPRECATED_311_TABLE_NAME = "deprecated_311";
 const PARCEL_TABLE_NAME = "parcel";
 
 const client = new Client(process.env.connectionString);
@@ -76,29 +75,7 @@ app.get("/fetch-311-for-address", async (req, res) => {
     `, [latitude, longitude, distance_threshold_km, houseNumber]
   );
 
-  const { rows: old311Rows } = await client.query(
-    `
-    WITH calculated_distances AS (
-        SELECT *,
-            (6371 * 2 * ASIN(SQRT(
-                POWER(SIN(RADIANS(latitude - $1) / 2), 2) +
-                COS(RADIANS($1)) * COS(RADIANS(latitude)) *
-                POWER(SIN(RADIANS(longitude - $2) / 2), 2)
-            ))) AS distance
-        FROM ${DEPRECATED_311_TABLE_NAME}
-        WHERE latitude IS NOT NULL
-          AND longitude IS NOT NULL
-          AND street_address IS NOT NULL
-          AND street_address LIKE $4 || '%'
-    )
-    SELECT *
-    FROM calculated_distances
-    WHERE distance <= $3
-    ORDER BY creation_date ASC;
-    `, [latitude, longitude, distance_threshold_km, houseNumber]
-  );
-
-  res.send([...new311Rows, ...old311Rows]);
+  res.send(new311Rows);
 });
 
 // this is currently unused
@@ -134,26 +111,7 @@ app.get("/fetch-nearby-311", async (req, res) => {
     `, [latitude, longitude, distance_threshold_km]
   );
 
-  const { rows: old311Rows } = await client.query(
-    `
-    WITH calculated_distances AS (
-        SELECT *,
-        (6371 * 2 * ASIN(SQRT(
-            POWER(SIN(RADIANS(latitude - $1) / 2), 2) +
-            COS(RADIANS($1)) * COS(RADIANS(latitude)) *
-            POWER(SIN(RADIANS(longitude - $2) / 2), 2)
-        ))) AS distance
-        FROM ${DEPRECATED_311_TABLE_NAME}
-        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-    )
-    SELECT *
-    FROM calculated_distances
-    WHERE distance <= $3
-    ORDER BY distance ASC;
-    `, [latitude, longitude, distance_threshold_km]
-  );
-
-  res.send([...new311Rows, ...old311Rows]);
+  res.send(new311Rows);
 });
 
 app.get("/search-parcel", async (req, res) => {
