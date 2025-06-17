@@ -9,8 +9,9 @@ const { Client } = pg;
 const app = express();
 const port = 3000;
 
-const CURRENT_311_TABLE_NAME = "current_311";
-const PARCEL_TABLE_NAME = "parcel";
+const SCHEMA = "dashboard_public";
+const CURRENT_311_TABLE_NAME = `${SCHEMA}.current_311`;
+const PARCEL_TABLE_NAME = `${SCHEMA}.parcel`;
 
 const client = new Client(process.env.connectionString);
 
